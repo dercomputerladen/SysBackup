@@ -1,0 +1,16 @@
+[general]
+dateFormat = "yyyy-MM-dd"
+
+[mysql]
+enabled = true
+host = ""
+port = 3306
+database = "magento"
+user = ""
+password = ""
+fileName = "{date} - {taskName}"
+
+[filesystem]
+targets = ["/home/magento/", "/home/test/test.ini"]
+fileName = "{date} - {taskName}"
+
