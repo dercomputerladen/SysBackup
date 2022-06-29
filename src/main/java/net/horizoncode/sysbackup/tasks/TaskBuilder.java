@@ -34,7 +34,7 @@ public class TaskBuilder {
         new SimpleDateFormat(
             getTaskConfig().getStringOrDefault("general.dateFormat", "yyyy-MM-dd HH-mm-ss"));
     String fileName =
-        getTaskConfig().getStringOrDefault("filesystem.fileName", "{date} {taskName}") + ".zip";
+        getTaskConfig().getStringOrDefault("filesystem.fileName", "{date} - {taskName}") + ".zip";
 
     fileName =
         fileName
@@ -68,5 +68,9 @@ public class TaskBuilder {
   private void executeNextTask() {
     Task nextTask = taskList.poll();
     if (nextTask != null) nextTask.start();
+    else {
+      System.out.println("Backup completed!");
+      System.out.println(0);
+    }
   }
 }
