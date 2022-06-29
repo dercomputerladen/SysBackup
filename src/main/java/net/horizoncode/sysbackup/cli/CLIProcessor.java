@@ -1,6 +1,5 @@
 package net.horizoncode.sysbackup.cli;
 
-import net.horizoncode.sysbackup.App;
 import net.horizoncode.sysbackup.config.Config;
 import net.horizoncode.sysbackup.tasks.TaskBuilder;
 import org.apache.commons.io.FileUtils;
@@ -73,7 +72,7 @@ public class CLIProcessor {
                 if (!tasksFolder.mkdir()) System.err.println("Failed to create tasks folder!");
               System.out.println("Saving task config " + fileName + ".toml...");
               FileUtils.copyInputStreamToFile(
-                  Objects.requireNonNull(App.class.getResourceAsStream("/" + "exampletask.toml")),
+                  Objects.requireNonNull(getClass().getResourceAsStream("/" + "exampletask.toml")),
                   new File(tasksFolder, fileName + ".toml"));
               System.out.println(fileName + ".toml saved!");
               break;

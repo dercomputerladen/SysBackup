@@ -1,8 +1,6 @@
 package net.horizoncode.sysbackup.config;
 
-import lombok.AccessLevel;
 import lombok.Getter;
-import net.horizoncode.sysbackup.App;
 import org.apache.commons.io.FileUtils;
 import org.tomlj.Toml;
 import org.tomlj.TomlArray;
@@ -26,7 +24,7 @@ public class Config {
     if (!configFile.exists()) {
       try {
         FileUtils.copyInputStreamToFile(
-            Objects.requireNonNull(App.class.getResourceAsStream("/" + configFile.getName())),
+            Objects.requireNonNull(getClass().getResourceAsStream("/" + configFile.getName())),
             configFile);
         justCreated = true;
       } catch (IOException e) {
@@ -36,7 +34,7 @@ public class Config {
       if (configFile.isDirectory()) {
         try {
           FileUtils.copyInputStreamToFile(
-              Objects.requireNonNull(App.class.getResourceAsStream("/" + configFile.getName())),
+              Objects.requireNonNull(getClass().getResourceAsStream("/" + configFile.getName())),
               configFile);
           justCreated = true;
         } catch (IOException e) {

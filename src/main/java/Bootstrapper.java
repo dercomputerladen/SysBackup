@@ -1,8 +1,9 @@
-import net.horizoncode.sysbackup.App;
+import net.horizoncode.sysbackup.cli.CLIProcessor;
 
 public class Bootstrapper {
 
   public static void main(String[] args) {
-    App.getInstance().start(args);
+    CLIProcessor cliProcessor = new CLIProcessor();
+    cliProcessor.startCLI(args);
   }
 }
