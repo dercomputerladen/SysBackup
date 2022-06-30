@@ -106,11 +106,11 @@ public class DatabaseTask extends Task {
           pb.stepTo(progressMonitor.getTotalWork());
         } catch (Exception exception) {
           exception.printStackTrace();
-          FileUtils.deleteQuietly(outputSQLFile);
+          outputSQLFile.deleteOnExit();
           onDone();
         }
         progressMonitor.endProgressMonitor();
-        FileUtils.deleteQuietly(outputSQLFile);
+        outputSQLFile.deleteOnExit();
         onDone();
       } catch (Exception ex) {
         ex.printStackTrace();
