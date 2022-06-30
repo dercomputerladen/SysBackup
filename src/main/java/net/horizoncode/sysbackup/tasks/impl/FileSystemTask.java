@@ -41,16 +41,6 @@ public class FileSystemTask extends Task {
         .getPool()
         .submit(
             () -> {
-              int terminalWidth = -1;
-              try {
-                Terminal terminal = TerminalBuilder.terminal();
-                try (terminal) {
-                  terminalWidth = terminal.getWidth();
-                }
-              } catch (IOException e) {
-                throw new RuntimeException(e);
-              }
-
               try (ZipFile zipFile = new ZipFile(outputZipFile)) {
                 System.out.println("Indexing files...");
                 ProgressMonitor progressMonitor = zipFile.getProgressMonitor();
@@ -61,8 +51,6 @@ public class FileSystemTask extends Task {
                         .setStyle(ProgressBarStyle.ASCII)
                         .setInitialMax(progressMonitor.getTotalWork())
                         .setTaskName("Adding Files...");
-
-                if (terminalWidth != -1) pbb.setMaxRenderedLength(terminalWidth);
 
                 try (ProgressBar pb = pbb.build()) {
                   while (!progressMonitor.getState().equals(ProgressMonitor.State.READY)) {
