@@ -3,11 +3,13 @@ package net.horizoncode.sysbackup.tasks;
 import lombok.Builder;
 import lombok.Getter;
 import net.horizoncode.sysbackup.config.Config;
+import net.horizoncode.sysbackup.tasks.impl.DatabaseTask;
 import net.horizoncode.sysbackup.tasks.impl.FileSystemTask;
 import org.apache.commons.io.FilenameUtils;
 import org.tomlj.TomlArray;
 
 import java.io.File;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -34,7 +36,10 @@ public class TaskBuilder {
         new SimpleDateFormat(
             getTaskConfig().getStringOrDefault("general.dateFormat", "yyyy-MM-dd HH-mm-ss"));
     String fileName =
-        getTaskConfig().getStringOrDefault("filesystem.fileName", "{date} - {taskName}") + ".zip";
+        getTaskConfig().getStringOrDefault("general.outputFile", "{date} - {taskName}") + ".zip";
+
+    boolean doFS = getTaskConfig().getBooleanOrDefault("filesystem.enabled", false);
+    boolean doDB = getTaskConfig().getBooleanOrDefault("mysql.enabled", false);
 
     fileName =
         fileName
@@ -44,8 +49,7 @@ public class TaskBuilder {
             .replace("{date}", sdf.format(new Date()));
 
     File outputFile = new File(backupDir, fileName);
-
-    if (getTaskConfig().getToml().contains("filesystem.targets")) {
+    if (doFS && getTaskConfig().getToml().contains("filesystem.targets")) {
       TomlArray filesArray = getTaskConfig().getArray("filesystem.targets");
 
       IntStream.range(0, filesArray.size())
@@ -62,6 +66,31 @@ public class TaskBuilder {
               });
     }
 
+    if (doDB) {
+      String database = getTaskConfig().getStringOrDefault("mysql.database", "");
+      String user = getTaskConfig().getStringOrDefault("mysql.user", "");
+      String password = getTaskConfig().getStringOrDefault("mysql.password", "");
+
+      if (!database.isEmpty() && !user.isEmpty() && !password.isEmpty()) {
+        DatabaseTask.DatabaseCredentials databaseCredentials =
+            DatabaseTask.DatabaseCredentials.builder()
+                .database(database)
+                .username(user)
+                .password(password.toCharArray())
+                .build();
+
+        taskList.add(
+            new DatabaseTask(databaseCredentials, outputFile) {
+              @Override
+              public void onDone() {
+                executeNextTask();
+              }
+            });
+      } else {
+        System.err.println("username, password or database is empty.");
+      }
+    }
+
     executeNextTask();
   }
 
@@ -70,7 +99,7 @@ public class TaskBuilder {
     if (nextTask != null) nextTask.start();
     else {
       System.out.println("Backup completed!");
-      System.out.println(0);
+      System.exit(0);
     }
   }
 }
