@@ -1,16 +1,15 @@
 [general]
-dateFormat = "yyyy-MM-dd"
+dateFormat = "yyyy-MM-dd HH-mm-ss"
+outputFile = "{date} - {taskName}"
 
 [mysql]
 enabled = true
-host = ""
-port = 3306
 database = "magento"
 user = ""
 password = ""
-fileName = "{date} - {taskName}"
 
 [filesystem]
+enabled = true
 targets = ["/home/magento/", "/home/test/test.ini"]
-fileName = "{date} - {taskName}"
+
 
