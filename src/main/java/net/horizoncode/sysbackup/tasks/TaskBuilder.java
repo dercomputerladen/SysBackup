@@ -9,7 +9,6 @@ import org.apache.commons.io.FilenameUtils;
 import org.tomlj.TomlArray;
 
 import java.io.File;
-import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -23,9 +22,11 @@ public class TaskBuilder {
 
   @Builder.Default private final LinkedBlockingQueue<Task> taskList = new LinkedBlockingQueue<>();
 
+  private final File executionPath;
+
   public void start() {
 
-    File backupDir = new File("backups");
+    File backupDir = new File(executionPath, "backups");
     if (!backupDir.exists())
       if (!backupDir.mkdir()) {
         System.err.println("Failed to create backups directory!");

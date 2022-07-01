@@ -3,16 +3,12 @@ package net.horizoncode.sysbackup.tasks.impl;
 import me.tongfei.progressbar.ProgressBar;
 import me.tongfei.progressbar.ProgressBarBuilder;
 import me.tongfei.progressbar.ProgressBarStyle;
-import me.tongfei.progressbar.TerminalUtils;
 import net.horizoncode.sysbackup.tasks.Task;
 import net.horizoncode.sysbackup.threading.ThreadPool;
 import net.lingala.zip4j.ZipFile;
 import net.lingala.zip4j.progress.ProgressMonitor;
-import org.jline.terminal.Terminal;
-import org.jline.terminal.TerminalBuilder;
 
 import java.io.File;
-import java.io.IOException;
 import java.nio.file.Paths;
 
 public class FileSystemTask extends Task {
@@ -50,7 +46,8 @@ public class FileSystemTask extends Task {
                     new ProgressBarBuilder()
                         .setStyle(ProgressBarStyle.ASCII)
                         .setInitialMax(progressMonitor.getTotalWork())
-                        .setTaskName("Adding Files...");
+                        .setTaskName("Adding Files...")
+                        .setUnit("MiB", 1048576);
 
                 try (ProgressBar pb = pbb.build()) {
                   while (!progressMonitor.getState().equals(ProgressMonitor.State.READY)) {

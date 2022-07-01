@@ -8,12 +8,9 @@ import me.tongfei.progressbar.ProgressBarStyle;
 import net.horizoncode.sysbackup.tasks.Task;
 import net.lingala.zip4j.ZipFile;
 import net.lingala.zip4j.progress.ProgressMonitor;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 
 import java.io.*;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.stream.Collectors;
 
@@ -96,7 +93,8 @@ public class DatabaseTask extends Task {
             new ProgressBarBuilder()
                 .setStyle(ProgressBarStyle.ASCII)
                 .setInitialMax(progressMonitor.getTotalWork())
-                .setTaskName("Adding DB File...");
+                .setTaskName("Adding DB File...")
+                .setUnit("MiB", 1048576);
 
         try (ProgressBar pb = pbb.build()) {
           while (!progressMonitor.getState().equals(ProgressMonitor.State.READY)) {

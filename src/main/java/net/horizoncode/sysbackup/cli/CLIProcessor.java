@@ -30,7 +30,7 @@ public class CLIProcessor {
     }
   }
 
-  public void startCLI(String[] args) {
+  public void startCLI(String[] args, File executionPath) {
     try {
       if ((args == null) || (args.length == 0)) {
         usage();
@@ -46,7 +46,7 @@ public class CLIProcessor {
                 return;
               }
               String fileName = args[1];
-              File tasksFolder = new File("tasks");
+              File tasksFolder = new File(executionPath, "tasks");
               if (!tasksFolder.exists())
                 if (!tasksFolder.mkdir()) System.err.println("Failed to create tasks folder!");
               File taskFile = new File(tasksFolder, fileName + ".toml");
@@ -56,7 +56,8 @@ public class CLIProcessor {
               }
 
               Config taskConfig = new Config(taskFile);
-              TaskBuilder taskBuilder = TaskBuilder.builder().taskConfig(taskConfig).build();
+              TaskBuilder taskBuilder =
+                  TaskBuilder.builder().executionPath(executionPath).taskConfig(taskConfig).build();
               taskBuilder.start();
               break;
             }
@@ -67,7 +68,7 @@ public class CLIProcessor {
                 return;
               }
               String fileName = args[1];
-              File tasksFolder = new File("tasks");
+              File tasksFolder = new File(executionPath, "tasks");
               if (!tasksFolder.exists())
                 if (!tasksFolder.mkdir()) System.err.println("Failed to create tasks folder!");
               System.out.println("Saving task config " + fileName + ".toml...");
@@ -84,7 +85,7 @@ public class CLIProcessor {
                 return;
               }
               String fileName = args[1];
-              File tasksFolder = new File("tasks");
+              File tasksFolder = new File(executionPath, "tasks");
               if (!tasksFolder.exists())
                 if (!tasksFolder.mkdir()) System.err.println("Failed to create tasks folder!");
               File taskFile = new File(tasksFolder, fileName + ".toml");
