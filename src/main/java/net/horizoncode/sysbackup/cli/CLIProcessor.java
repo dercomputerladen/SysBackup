@@ -8,6 +8,7 @@ import org.tomlj.TomlParseResult;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Locale;
 import java.util.Objects;
 
@@ -25,9 +26,7 @@ public class CLIProcessor {
       "    java -jar sysbackup.jar generateTaskConf magento",
       "    java -jar sysbackup.jar backup magento"
     };
-    for (String u : usage) {
-      System.out.println(u);
-    }
+    Arrays.stream(usage).forEachOrdered(System.out::println);
   }
 
   public void startCLI(String[] args, File executionPath) {
