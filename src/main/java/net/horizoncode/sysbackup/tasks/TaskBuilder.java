@@ -11,6 +11,7 @@ import org.tomlj.TomlArray;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
+import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -63,8 +64,10 @@ public class TaskBuilder {
     File outputFile = new File(backupDir, fileName);
 
     if (doVAC) {
-      TimeUnit unit =
-          TimeUnit.valueOf(getTaskConfig().getStringOrDefault("vacuum.unit", TimeUnit.DAYS.name()));
+      ChronoUnit unit =
+          ChronoUnit.valueOf(
+              getTaskConfig().getStringOrDefault("vacuum.unit", ChronoUnit.DAYS.name()));
+
       int value = getTaskConfig().getIntOrDefault("vacuum.time", 5);
 
       System.out.printf("Adding VacuumTask with lifetime of %d %s%n", value, unit.name());

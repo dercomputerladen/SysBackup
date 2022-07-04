@@ -5,7 +5,7 @@ outputFile = "{date} - {taskName}"
 [vacuum]
 enabled = true
 time = 5
-unit = "DAYS" # See java.util.concurrent.TimeUnit
+unit = "DAYS" # See java.time.temporal.ChronoUnit
 
 [mysql]
 enabled = true
