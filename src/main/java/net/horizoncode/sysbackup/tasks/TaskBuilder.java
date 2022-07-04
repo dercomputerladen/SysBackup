@@ -6,6 +6,7 @@ import net.horizoncode.sysbackup.config.Config;
 import net.horizoncode.sysbackup.tasks.impl.DatabaseTask;
 import net.horizoncode.sysbackup.tasks.impl.FileSystemTask;
 import net.horizoncode.sysbackup.tasks.impl.VacuumTask;
+import net.horizoncode.sysbackup.threading.ThreadPool;
 import org.apache.commons.io.FilenameUtils;
 import org.tomlj.TomlArray;
 
@@ -25,6 +26,7 @@ public class TaskBuilder {
   private final String taskName;
 
   @Builder.Default private final LinkedBlockingQueue<Task> taskList = new LinkedBlockingQueue<>();
+  @Builder.Default @Getter private final ThreadPool threadPool = new ThreadPool(3, 10);
 
   private final File executionPath;
 
@@ -74,7 +76,7 @@ public class TaskBuilder {
           new VacuumTask(backupDir, unit, value) {
             @Override
             public void onDone() {
-              executeNextTask();
+              getThreadPool().getPool().submit(() -> executeNextTask());
             }
           });
     }
@@ -92,7 +94,7 @@ public class TaskBuilder {
                     new FileSystemTask(target, outputFile) {
                       @Override
                       public void onDone() {
-                        executeNextTask();
+                        getThreadPool().getPool().submit(() -> executeNextTask());
                       }
                     });
               });
@@ -117,7 +119,7 @@ public class TaskBuilder {
             new DatabaseTask(databaseCredentials, outputFile) {
               @Override
               public void onDone() {
-                executeNextTask();
+                getThreadPool().getPool().submit(() -> executeNextTask());
               }
             });
       } else {
@@ -125,7 +127,7 @@ public class TaskBuilder {
       }
     }
 
-    executeNextTask();
+    getThreadPool().getPool().submit(this::executeNextTask);
   }
 
   private void executeNextTask() {
