@@ -14,9 +14,8 @@ import java.nio.file.Paths;
 public class FileSystemTask extends Task {
 
   private final File target;
-  private File outputZipFile;
-
   private final ThreadPool threadPool;
+  private File outputZipFile;
 
   public FileSystemTask(String folderOrFilePath, File outputZipFile) {
     this.threadPool = new ThreadPool(3, 10);

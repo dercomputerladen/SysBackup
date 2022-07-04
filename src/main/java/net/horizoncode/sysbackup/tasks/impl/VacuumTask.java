@@ -2,7 +2,6 @@ package net.horizoncode.sysbackup.tasks.impl;
 
 import lombok.Getter;
 import net.horizoncode.sysbackup.tasks.Task;
-import org.apache.commons.io.FileUtils;
 
 import java.io.File;
 import java.util.Arrays;
