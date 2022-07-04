@@ -90,7 +90,6 @@ public class CLIProcessor {
                 return;
               }
               String fileName = args[1];
-              System.out.println(executionPath.getAbsolutePath());
               File tasksFolder = new File(executionPath, "tasks");
               if (!tasksFolder.exists())
                 if (!tasksFolder.mkdir()) System.err.println("Failed to create tasks folder!");
