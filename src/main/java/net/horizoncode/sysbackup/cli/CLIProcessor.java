@@ -3,6 +3,7 @@ package net.horizoncode.sysbackup.cli;
 import net.horizoncode.sysbackup.config.Config;
 import net.horizoncode.sysbackup.tasks.TaskBuilder;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
 import org.tomlj.Toml;
 import org.tomlj.TomlParseResult;
 
@@ -54,9 +55,14 @@ public class CLIProcessor {
                 return;
               }
 
+              System.out.println("setuping TaskBuilder...");
               Config taskConfig = new Config(taskFile);
               TaskBuilder taskBuilder =
-                  TaskBuilder.builder().executionPath(executionPath).taskConfig(taskConfig).build();
+                  TaskBuilder.builder()
+                      .executionPath(executionPath)
+                      .taskName(FilenameUtils.removeExtension(taskFile.getName()))
+                      .taskConfig(taskConfig)
+                      .build();
               taskBuilder.start();
               break;
             }
@@ -84,6 +90,7 @@ public class CLIProcessor {
                 return;
               }
               String fileName = args[1];
+              System.out.println(executionPath.getAbsolutePath());
               File tasksFolder = new File(executionPath, "tasks");
               if (!tasksFolder.exists())
                 if (!tasksFolder.mkdir()) System.err.println("Failed to create tasks folder!");

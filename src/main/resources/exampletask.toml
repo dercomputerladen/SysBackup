@@ -2,6 +2,11 @@
 dateFormat = "yyyy-MM-dd HH-mm-ss"
 outputFile = "{date} - {taskName}"
 
+[vacuum]
+enabled = true
+time = 5
+unit = "DAYS" # See java.util.concurrent.TimeUnit
+
 [mysql]
 enabled = true
 database = "magento"
