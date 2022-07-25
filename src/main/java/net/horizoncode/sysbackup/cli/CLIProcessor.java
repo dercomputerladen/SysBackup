@@ -1,6 +1,8 @@
 package net.horizoncode.sysbackup.cli;
 
+import net.horizoncode.sysbackup.SysBackup;
 import net.horizoncode.sysbackup.config.Config;
+import net.horizoncode.sysbackup.logging.Logger;
 import net.horizoncode.sysbackup.tasks.TaskBuilder;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -27,7 +29,7 @@ public class CLIProcessor {
       "    java -jar sysbackup.jar generateTaskConf magento",
       "    java -jar sysbackup.jar backup magento"
     };
-    Arrays.stream(usage).forEachOrdered(System.out::println);
+    Arrays.stream(usage).forEach(System.out::println);
   }
 
   public void startCLI(String[] args, File executionPath) {
@@ -37,25 +39,28 @@ public class CLIProcessor {
         return;
       }
 
+      Logger logger = SysBackup.getLogger();
+
       for (int index = 0; index < args.length; index++) {
         switch (args[index].toLowerCase(Locale.ROOT)) {
           case "backup":
             {
               if (args.length <= 1) {
-                System.err.println("Please specify a output task config name!");
+                logger.log(Logger.LogLevel.WARN, "Please specify a output task config name!");
                 return;
               }
               String fileName = args[1];
               File tasksFolder = new File(executionPath, "tasks");
               if (!tasksFolder.exists())
-                if (!tasksFolder.mkdir()) System.err.println("Failed to create tasks folder!");
+                if (!tasksFolder.mkdir())
+                  logger.log(Logger.LogLevel.ERROR, "Failed to create tasks folder!");
               File taskFile = new File(tasksFolder, fileName + ".toml");
               if (!taskFile.exists()) {
-                System.err.println("TaskFile " + fileName + ".toml does not exist!");
+                logger.log(Logger.LogLevel.ERROR, "TaskFile %s.toml does not exist!", fileName);
                 return;
               }
 
-              System.out.println("setuping TaskBuilder...");
+              logger.log(Logger.LogLevel.INFO, "setupping TaskBuilder...");
               Config taskConfig = new Config(taskFile);
               TaskBuilder taskBuilder =
                   TaskBuilder.builder()
@@ -69,48 +74,57 @@ public class CLIProcessor {
           case "generatetaskconf":
             {
               if (args.length <= 1) {
-                System.err.println("Please specify a output task config name!");
+                logger.log(Logger.LogLevel.ERROR, "Please specify a output task config name!");
                 return;
               }
               String fileName = args[1];
               File tasksFolder = new File(executionPath, "tasks");
               if (!tasksFolder.exists())
-                if (!tasksFolder.mkdir()) System.err.println("Failed to create tasks folder!");
-              System.out.println("Saving task config " + fileName + ".toml...");
-              FileUtils.copyInputStreamToFile(
-                  Objects.requireNonNull(getClass().getResourceAsStream("/" + "exampletask.toml")),
-                  new File(tasksFolder, fileName + ".toml"));
-              System.out.println(fileName + ".toml saved!");
+                if (!tasksFolder.mkdir())
+                  logger.log(Logger.LogLevel.ERROR, "Failed to create tasks folder!");
+              logger.log(Logger.LogLevel.INFO, "Saving task config %s.toml...", fileName);
+              try {
+                FileUtils.copyInputStreamToFile(
+                    Objects.requireNonNull(
+                        getClass().getResourceAsStream("/" + "exampletask.toml")),
+                    new File(tasksFolder, fileName + ".toml"));
+              } catch (IOException exception) {
+                logger.log(Logger.LogLevel.ERROR, "Failed to save task config.");
+              }
+              logger.log(Logger.LogLevel.INFO, "%s.toml saved!", fileName);
               break;
             }
           case "checktaskconf":
             {
               if (args.length <= 1) {
-                System.err.println("Please specify a output task config name!");
+                logger.log(Logger.LogLevel.ERROR, "Please specify a output task config name!");
                 return;
               }
               String fileName = args[1];
               File tasksFolder = new File(executionPath, "tasks");
               if (!tasksFolder.exists())
-                if (!tasksFolder.mkdir()) System.err.println("Failed to create tasks folder!");
+                if (!tasksFolder.mkdir())
+                  logger.log(Logger.LogLevel.ERROR, "Failed to create tasks folder!");
               File taskFile = new File(tasksFolder, fileName + ".toml");
               if (!taskFile.exists()) {
-                System.err.println("TaskFile " + fileName + ".toml does not exist!");
+                logger.log(Logger.LogLevel.ERROR, "TaskFile %s.toml does not exist!", fileName);
                 return;
               }
               TomlParseResult toml;
               try {
                 toml = Toml.parse(taskFile.toPath());
               } catch (IOException e) {
-                System.err.println("failed to read TaskFile.");
+                logger.log(Logger.LogLevel.ERROR, "failed to read TaskFile.");
                 throw new RuntimeException(e);
               }
               if (toml.hasErrors()) {
-                System.err.printf(
-                    "TaskFile checked: found %d issues!:\n", (long) toml.errors().size());
-                toml.errors().forEach(error -> System.err.println(error.toString()));
+                logger.log(
+                    Logger.LogLevel.ERROR,
+                    "TaskFile checked: found %d issues!:\n",
+                    (long) toml.errors().size());
+                toml.errors().forEach(error -> logger.log(Logger.LogLevel.ERROR, error.toString()));
               } else {
-                System.out.println("TaskFile checked successfully: no issues found!");
+                logger.log(Logger.LogLevel.INFO, "TaskFile checked successfully: no issues found!");
               }
               break;
             }
@@ -122,6 +136,7 @@ public class CLIProcessor {
         }
       }
     } catch (Throwable t) {
+      SysBackup.getLogger().log(Logger.LogLevel.ERROR, t.getMessage());
       t.printStackTrace();
     }
   }

@@ -59,6 +59,11 @@
       <artifactId>commons-lang3</artifactId>
       <version>3.12.0</version>
     </dependency>
+    <dependency>
+      <groupId>com.diogonunes</groupId>
+      <artifactId>JColor</artifactId>
+      <version>5.5.1</version>
+    </dependency>
     <!-- testing dependencies -->
     <dependency>
       <groupId>junit</groupId>

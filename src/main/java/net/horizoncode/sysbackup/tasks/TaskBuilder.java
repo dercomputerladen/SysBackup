@@ -2,7 +2,9 @@ package net.horizoncode.sysbackup.tasks;
 
 import lombok.Builder;
 import lombok.Getter;
+import net.horizoncode.sysbackup.SysBackup;
 import net.horizoncode.sysbackup.config.Config;
+import net.horizoncode.sysbackup.logging.Logger;
 import net.horizoncode.sysbackup.tasks.impl.DatabaseTask;
 import net.horizoncode.sysbackup.tasks.impl.FileSystemTask;
 import net.horizoncode.sysbackup.tasks.impl.VacuumTask;
@@ -32,17 +34,19 @@ public class TaskBuilder {
 
   public void start() {
 
+    Logger logger = SysBackup.getLogger();
+
     File rootBackupDir = new File(executionPath, "backups");
     if (!rootBackupDir.exists())
       if (!rootBackupDir.mkdir()) {
-        System.err.println("Failed to create root backup directory!");
+        logger.log(Logger.LogLevel.ERROR, "Failed to create root backup directory!");
         System.exit(2);
       }
 
     File backupDir = new File(rootBackupDir, getTaskName());
     if (!backupDir.exists())
       if (!backupDir.mkdir()) {
-        System.err.println("Failed to create backup directory!");
+        logger.log(Logger.LogLevel.ERROR, "Failed to create backup directory!");
         System.exit(2);
       }
 
@@ -71,7 +75,8 @@ public class TaskBuilder {
 
       int value = getTaskConfig().getIntOrDefault("vacuum.time", 5);
 
-      System.out.printf("Adding VacuumTask with lifetime of %d %s%n", value, unit.name());
+      logger.log(
+          Logger.LogLevel.INFO, "Adding VacuumTask with lifetime of %d %s%n", value, unit.name());
       taskList.add(
           new VacuumTask(backupDir, unit, value) {
             @Override
@@ -82,14 +87,14 @@ public class TaskBuilder {
     }
 
     if (doFS && getTaskConfig().getToml().contains("filesystem.targets")) {
-      System.out.println("Adding FileSystemTask...");
+      logger.log(Logger.LogLevel.INFO, "Adding FileSystemTask...");
       TomlArray filesArray = getTaskConfig().getArray("filesystem.targets");
 
       IntStream.range(0, filesArray.size())
           .forEach(
               value -> {
                 String target = filesArray.getString(value);
-                System.out.println("Adding \"" + target + "\"");
+                logger.log(Logger.LogLevel.INFO, "Adding \"%s\"", target);
                 taskList.add(
                     new FileSystemTask(target, outputFile) {
                       @Override
@@ -113,7 +118,7 @@ public class TaskBuilder {
                 .password(password.toCharArray())
                 .build();
 
-        System.out.println("Adding DatabaseTask for database \"" + database + "\"");
+        logger.log(Logger.LogLevel.INFO, "Adding DatabaseTask for database \"%s\"", database);
 
         taskList.add(
             new DatabaseTask(databaseCredentials, outputFile) {
@@ -123,7 +128,7 @@ public class TaskBuilder {
               }
             });
       } else {
-        System.err.println("username, password or database is empty.");
+        logger.log(Logger.LogLevel.ERROR, "username, password or database is empty.");
       }
     }
 
@@ -134,7 +139,7 @@ public class TaskBuilder {
     Task nextTask = taskList.poll();
     if (nextTask != null) nextTask.start();
     else {
-      System.out.println("Backup completed!");
+      SysBackup.getLogger().log(Logger.LogLevel.INFO, "Backup completed!");
       System.exit(0);
     }
   }

@@ -5,6 +5,8 @@ import lombok.Getter;
 import me.tongfei.progressbar.ProgressBar;
 import me.tongfei.progressbar.ProgressBarBuilder;
 import me.tongfei.progressbar.ProgressBarStyle;
+import net.horizoncode.sysbackup.SysBackup;
+import net.horizoncode.sysbackup.logging.Logger;
 import net.horizoncode.sysbackup.tasks.Task;
 import net.lingala.zip4j.ZipFile;
 import net.lingala.zip4j.progress.ProgressMonitor;
@@ -29,6 +31,7 @@ public class DatabaseTask extends Task {
   @Override
   public void start() {
     try {
+      Logger logger = SysBackup.getLogger();
       String commandArgs =
           "mysqldump -u "
               + getDatabaseCredentials().username
@@ -51,6 +54,7 @@ public class DatabaseTask extends Task {
                   .lines()
                   .collect(Collectors.joining("\n"));
         } catch (InterruptedException e) {
+          logger.log(Logger.LogLevel.ERROR, e.getMessage());
           throw new RuntimeException(e);
         }
       }
@@ -63,13 +67,13 @@ public class DatabaseTask extends Task {
                     new InputStreamReader(process.getErrorStream(), StandardCharsets.UTF_8))
                 .lines()
                 .collect(Collectors.joining("\n"));
-        System.out.println(text);
+        logger.log(Logger.LogLevel.ERROR, text);
         onDone();
         return;
       }
 
       if (databaseContent.isEmpty()) {
-        System.err.println("database content is empty");
+        logger.log(Logger.LogLevel.ERROR, "database content is empty");
         onDone();
         return;
       }
@@ -84,7 +88,7 @@ public class DatabaseTask extends Task {
       BufferedWriter writer = new BufferedWriter(new FileWriter(outputSQLFile));
       writer.write(databaseContent);
       writer.close();
-      System.out.println("Adding database to backup zip...");
+      logger.log(Logger.LogLevel.INFO, "Adding database to backup zip...");
       try (ZipFile zipFile = new ZipFile(getOutputFile())) {
         ProgressMonitor progressMonitor = zipFile.getProgressMonitor();
         zipFile.setRunInThread(true);
@@ -103,6 +107,7 @@ public class DatabaseTask extends Task {
           }
           pb.stepTo(progressMonitor.getTotalWork());
         } catch (Exception exception) {
+          logger.log(Logger.LogLevel.ERROR, exception.getMessage());
           exception.printStackTrace();
           outputSQLFile.deleteOnExit();
           onDone();
@@ -111,11 +116,13 @@ public class DatabaseTask extends Task {
         outputSQLFile.deleteOnExit();
         onDone();
       } catch (Exception ex) {
+        logger.log(Logger.LogLevel.ERROR, ex.getMessage());
         ex.printStackTrace();
         onDone();
       }
 
     } catch (IOException e) {
+      SysBackup.getLogger().log(Logger.LogLevel.ERROR, e.getMessage());
       throw new RuntimeException(e);
     }
   }
