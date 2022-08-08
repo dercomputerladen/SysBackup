@@ -1,13 +1,14 @@
-const prettytime = require('prettytime')
+/* eslint-disable require-jsdoc */
+const prettytime = require('prettytime');
 class Timer {
-    startTimer() {
-        this.start = Date.now();
-        return this;
-    }
+  startTimer() {
+    this.start = Date.now();
+    return this;
+  }
 
-    endTimer() {
-        return prettytime(Date.now() - this.start, { decimals: 2 });
-    }
+  endTimer() {
+    return prettytime(Date.now() - this.start, {decimals: 2});
+  }
 }
 
 module.exports = Timer;
