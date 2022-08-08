@@ -96,7 +96,11 @@ const run = async (programArgs) => {
                 .replace("{taskName}", PATH.parse(taskName).name);
 
             const DB_FILE = PATH.join(TEMP_DIR, require('crypto').randomBytes(16).toString('hex') + ".sql");
-            const ARCHIVE = new BACKUP_ARCHIVE(PATH.join(BACKUPS_DIRECTORY, PATH.parse(taskName).name, REPLACED_FILENAME + ".tar.gz"), TASK_FILE_CONTENTS.filesystem.targets);
+            const ARCHIVE = new BACKUP_ARCHIVE(PATH.join(BACKUPS_DIRECTORY, PATH.parse(taskName).name,
+                REPLACED_FILENAME + ".tar.gz"),
+                TASK_FILE_CONTENTS.filesystem.targets,
+                TASK_FILE_CONTENTS.general.gzip,
+                TASK_FILE_CONTENTS.general.gzipLevel);
 
             ARCHIVE.eventEmitter.on('progress', (progressInfo) => {
                 const TOTAL = ARCHIVE.totalFiles;
@@ -232,7 +236,9 @@ const run = async (programArgs) => {
             const TASK_CONFIG = {
                 "general": {
                     "dateFormat": "yyyy-MM-DD HH-mm-ss",
-                    "outputFile": "{date} - {taskName}"
+                    "outputFile": "{date} - {taskName}",
+                    "gzip": true,
+                    "gzipLevel": 6
                 },
                 "vacuum": {
                     "enabled": true,
@@ -293,6 +299,16 @@ const validate = (taskConfig) => {
             }
         } else {
             ERRORS.push("general.outputFile is not defined or is not a string");
+        }
+        if (typeof taskConfig.general.gzip === "boolean") {
+            if (taskConfig.general.gzip) {
+                if (!taskConfig.general.gzipLevel && typeof taskConfig.general.gzipLevel !== "number") {
+                    ERRORS.push("general.gzipLevel is not defined or is not a number");
+                }
+            }
+        } else {
+            ERRORS.push("general.gzip is not defined or is not a boolean");
+            ERRORS.push("general.gzipLevel is not defined or is not a number");
         }
     } else {
         ERRORS.push("general section is missing or not an object");

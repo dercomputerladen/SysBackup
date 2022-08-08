@@ -3,12 +3,13 @@ const path = require('path');
 const { EventEmitter } = require('events');
 
 class Archiver {
-    constructor(backupPath, backupPaths) {
+    constructor(backupPath, backupPaths, gzip, gzipLevel) {
         this.backupPath = backupPath;
         this.backupPaths = backupPaths;
         this.eventEmitter = new EventEmitter();
         this.archive = require('archiver')('tar', {
-            zlib: { level: 9 }
+            gzip: gzip,
+            gzipOptions: { level: gzipLevel }
         });
         this.totalFiles = 0;
     }
