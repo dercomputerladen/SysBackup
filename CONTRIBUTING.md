@@ -1,5 +1,5 @@
 # Contributing
-Thank you for wanting to contribute to the development for theta! Please keep the following in mind when contributing to this repository please keep all of the following in mind as it will prevent headaches in the future
+Thank you for wanting to contribute to the development of SysBackup! Please keep the following in mind when contributing to this repository please keep all of the following in mind as it will prevent headaches in the future
 
 ## Code style
 - Constants are to be written using SCREAMING_SNAKE_CASE
