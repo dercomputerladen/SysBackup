@@ -1,0 +1,6 @@
+node_modules/
+backups/
+tasks/
+.temp/
+bin/
+pnpm-lock.yaml
