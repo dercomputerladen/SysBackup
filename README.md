@@ -5,7 +5,7 @@ This branch is a rewrite of the [previous in Java Developed branch](https://git.
 ## Setup
 
 ### Requirements
-- NodeJS 16 `(only tested version yet)`
+- NodeJS >= 14
 
 You can either: [Build a executeable](#build-a-executeable) or [Runing from Source](#running-from-source)
 
