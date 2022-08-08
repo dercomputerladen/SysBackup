@@ -6,8 +6,7 @@ class Timer {
     }
 
     endTimer() {
-        const ELAPSED = Date.now() - this.start;
-        return prettytime(ELAPSED, { decimals: 2 });
+        return prettytime(Date.now() - this.start, { decimals: 2 });
     }
 }
 
