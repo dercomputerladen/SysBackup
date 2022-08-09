@@ -7,7 +7,7 @@ This branch is a rewrite of the [previous in Java Developed branch](https://git.
 ### Requirements
 - NodeJS >= 14
 
-You can either: [Build a executeable](#build-a-executeable) or [Runing from Source](#running-from-source)
+You can either: [Build a executeable](#build-a-executeable) or [Running from Source](#running-from-source)
 
 ### Build a executeable
 
