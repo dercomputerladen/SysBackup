@@ -43,7 +43,7 @@ pnpm run pkg
 yarn run pkg
 ```
 
-Your builded binary executeable should be in bin/
+Your builded binary executeable should be located in `bin/`
 
 ### Running from Source
 
