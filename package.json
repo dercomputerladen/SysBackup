@@ -24,11 +24,24 @@
     "archiver": "^5.3.1",
     "count-files-dirs": "^0.2.3",
     "crontab": "^1.4.2",
+    "fs-extra": "^10.1.0",
     "moment": "^2.29.4",
     "mysqldump": "^3.2.0",
     "ora": "5.4.1",
     "prettytime": "^1.0.0",
     "prompts": "^2.4.2",
     "tiny-glob": "^0.2.9"
+  },
+  "pnpm": {
+    "overrides": {
+      "minimist@<1.2.6": ">=1.2.6",
+      "braces@<2.3.1": ">=2.3.1",
+      "diff@<3.5.0": ">=3.5.0",
+      "minimatch@<3.0.2": ">=3.0.2",
+      "debug@<2.6.9": ">=2.6.9",
+      "minimist@<0.2.1": ">=0.2.1",
+      "glob-parent@<5.1.2": ">=5.1.2",
+      "growl@<1.10.0": ">=1.10.0"
+    }
   }
 }
