@@ -8,7 +8,9 @@ const ora = require('ora');
 const BackupArchive = require('./archiver');
 const mysqldump = require('mysqldump');
 
-const CURRENT_FOLDER = __dirname.startsWith('/snapshot') ? path.dirname(process.env._) : __dirname;
+const CURRENT_FOLDER = __dirname.startsWith('/snapshot') ?
+  path.dirname(process.env._) :
+  __dirname;
 const TASKS_DIRECTORY = path.join(CURRENT_FOLDER, 'tasks');
 const BACKUPS_DIRECTORY = path.join(CURRENT_FOLDER, 'backups');
 const TEMP_DIR = path.join(CURRENT_FOLDER, '.temp');
@@ -19,9 +21,10 @@ const run = async (programArgs) => {
     case 'exit':
       logger.info('exiting...');
       break;
-    case 'createcrontab': {
-      logger.info('not added yet.');
-    }
+    case 'createcrontab':
+      {
+        logger.info('not added yet.');
+      }
       break;
     case 'backup': {
       let taskName = programArgs.filename ? programArgs.filename + '.json' : '';
@@ -44,7 +47,10 @@ const run = async (programArgs) => {
           name: 'filename',
           message: 'Select a Task file to use',
           choices: AUTO_COMPLETE_ARRAY,
-          validate: (value) => FILES.includes(value + '.json') ? true : 'Task file does not exist, please specify a valid task file.',
+          validate: (value) =>
+            FILES.includes(value + '.json') ?
+              true :
+              'Task file does not exist, please specify a valid task file.',
         });
 
         taskName = PROMPT.filename;
@@ -59,25 +65,57 @@ const run = async (programArgs) => {
         process.exit(1);
       }
 
-      const TASK_FILE_CONTENTS = JSON.parse(fs.readFileSync(path.join(TASKS_DIRECTORY, taskName), 'utf8'));
+      const TASK_FILE_CONTENTS = JSON.parse(
+          fs.readFileSync(path.join(TASKS_DIRECTORY, taskName), 'utf8'),
+      );
       const VALID_TASK_FILE = validate(TASK_FILE_CONTENTS);
       if (VALID_TASK_FILE.length > 0) {
-        logger.error('task file is not valid, ' + VALID_TASK_FILE.length + ' errors found');
-        logger.info('check with \'' + process.argv0 + ' checkTaskConf ' + path.parse(taskName).name + '\'');
+        logger.error(
+            'task file is not valid, ' + VALID_TASK_FILE.length + ' errors found',
+        );
+        logger.info(
+            'check with \'' +
+            process.argv0 +
+            ' checkTaskConf ' +
+            path.parse(taskName).name +
+            '\'',
+        );
         process.exit(1);
       }
       logger.success('task file is valid');
       const TIMER = new (require('./timer'))().startTimer();
-      const SPINNER = ora('initialization...').start();
-      if (!fs.existsSync(path.join(BACKUPS_DIRECTORY, path.parse(taskName).name))) {
-        await fs.promises.mkdir(path.join(BACKUPS_DIRECTORY, path.parse(taskName).name));
+      const SPINNER = ora('preparing backup... please wait.').start();
+
+      const FILE_PATHS = [];
+      const fsExtra = require('fs-extra');
+
+      await Promise.all(TASK_FILE_CONTENTS.filesystem.targets.map(async (file) => {
+        if (fs.existsSync(file)) {
+          const newPath = path.join(TEMP_DIR, path.parse(file).name);
+          FILE_PATHS.push(newPath);
+          await fsExtra.copySync(file, newPath);
+        }
+      }));
+
+      if (
+        !fs.existsSync(path.join(BACKUPS_DIRECTORY, path.parse(taskName).name))
+      ) {
+        await fs.promises.mkdir(
+            path.join(BACKUPS_DIRECTORY, path.parse(taskName).name),
+        );
       } else {
         if (TASK_FILE_CONTENTS.vacuum.enabled) {
           SPINNER.text = 'cleaning up old backups...';
-          const ALL_FILES = fs.readdirSync(path.join(BACKUPS_DIRECTORY, path.parse(taskName).name));
+          const ALL_FILES = fs.readdirSync(
+              path.join(BACKUPS_DIRECTORY, path.parse(taskName).name),
+          );
           const CURRENT_DATE = Date.now();
           for (const FILE of ALL_FILES) {
-            const FILE_DATE = new Date(fs.statSync(path.join(BACKUPS_DIRECTORY, path.parse(taskName).name, FILE)).birthtime).getTime();
+            const FILE_DATE = new Date(
+                fs.statSync(
+                    path.join(BACKUPS_DIRECTORY, path.parse(taskName).name, FILE),
+                ).birthtime,
+            ).getTime();
             let timeAdd = 0;
             switch (TASK_FILE_CONTENTS.vacuum.unit) {
               case 'DAYS':
@@ -92,22 +130,34 @@ const run = async (programArgs) => {
             }
             const DELETE_DATE = new Date(FILE_DATE + timeAdd);
             if (DELETE_DATE.getTime() < CURRENT_DATE) {
-              await fs.unlinkSync(path.join(BACKUPS_DIRECTORY, path.parse(taskName).name, FILE));
+              await fs.unlinkSync(
+                  path.join(BACKUPS_DIRECTORY, path.parse(taskName).name, FILE),
+              );
             }
           }
         }
       }
 
       const UNREPLACED_FILENAME = TASK_FILE_CONTENTS.general.outputFile;
-      const REPLACED_FILENAME = UNREPLACED_FILENAME.replace('{date}', require('moment')().format(TASK_FILE_CONTENTS.general.dateFormat))
-          .replace('{taskName}', path.parse(taskName).name);
+      const REPLACED_FILENAME = UNREPLACED_FILENAME.replace(
+          '{date}',
+          require('moment')().format(TASK_FILE_CONTENTS.general.dateFormat),
+      ).replace('{taskName}', path.parse(taskName).name);
 
-      const DB_FILE = path.join(TEMP_DIR, require('crypto').randomBytes(16).toString('hex') + '.sql');
-      const ARCHIVE = new BackupArchive(path.join(BACKUPS_DIRECTORY, path.parse(taskName).name,
-          REPLACED_FILENAME + '.tar.gz'),
-      TASK_FILE_CONTENTS.filesystem.targets,
-      TASK_FILE_CONTENTS.general.gzip,
-      TASK_FILE_CONTENTS.general.gzipLevel);
+      const DB_FILE = path.join(
+          TEMP_DIR,
+          require('crypto').randomBytes(16).toString('hex') + '.sql',
+      );
+      const ARCHIVE = new BackupArchive(
+          path.join(
+              BACKUPS_DIRECTORY,
+              path.parse(taskName).name,
+              REPLACED_FILENAME + '.tar.gz',
+          ),
+          FILE_PATHS,
+          TASK_FILE_CONTENTS.general.gzip,
+          TASK_FILE_CONTENTS.general.gzipLevel,
+      );
 
       ARCHIVE.eventEmitter.on('progress', (progressInfo) => {
         const TOTAL = ARCHIVE.totalFiles;
@@ -117,10 +167,12 @@ const run = async (programArgs) => {
       });
 
       ARCHIVE.eventEmitter.on('finish', async () => {
-        if (TASK_FILE_CONTENTS.mysql.enabled) {
-          if (DB_FILE !== undefined && fs.existsSync(DB_FILE)) {
-            await fs.unlinkSync(DB_FILE);
-          }
+        SPINNER.text = 'Cleaning up temporary files...';
+        if (fs.existsSync(DB_FILE)) {
+          await fs.unlinkSync(DB_FILE);
+        }
+        for (const FILE of FILE_PATHS) {
+          await fsExtra.removeSync(FILE);
         }
         SPINNER.succeed('backup complete, took ' + TIMER.endTimer());
       });
@@ -178,7 +230,10 @@ const run = async (programArgs) => {
           name: 'filename',
           message: 'Select a Task file to check',
           choices: AUTO_COMPLETE_ARRAY,
-          validate: (value) => FILES.includes(value + '.json') ? true : 'Task file does not exist, please specify a valid task file.',
+          validate: (value) =>
+            FILES.includes(value + '.json') ?
+              true :
+              'Task file does not exist, please specify a valid task file.',
         });
 
         taskName = PROMPT.filename;
@@ -198,7 +253,11 @@ const run = async (programArgs) => {
 
       const VALIDATION_ERRORS = validate(TASK_FILE_TO_CHECK);
       if (VALIDATION_ERRORS.length > 0) {
-        logger.error('task file is not valid, ' + VALIDATION_ERRORS.length + ' errors found');
+        logger.error(
+            'task file is not valid, ' +
+            VALIDATION_ERRORS.length +
+            ' errors found',
+        );
         for (const ERROR of VALIDATION_ERRORS) logger.error(ERROR);
       } else {
         logger.success('Task file is valid!');
@@ -214,7 +273,10 @@ const run = async (programArgs) => {
           type: 'text',
           name: 'filename',
           message: 'Define a name for the new task file',
-          validate: (value) => value.length <= 0 || value == '' ? 'Please specify a valid file name' : true,
+          validate: (value) =>
+            value.length <= 0 || value == '' ?
+              'Please specify a valid file name' :
+              true,
         });
 
         taskName = PROMPT.filename;
@@ -224,7 +286,8 @@ const run = async (programArgs) => {
           const PROMPT_2 = await prompts({
             type: 'toggle',
             name: 'overwrite',
-            message: 'A task file with the same name already exists. Do you want to overwrite it?',
+            message:
+              'A task file with the same name already exists. Do you want to overwrite it?',
             active: 'yes',
             inactive: 'no',
             initial: false,
@@ -244,38 +307,37 @@ const run = async (programArgs) => {
       const TASK_FILE_PATH = path.join(TASKS_DIRECTORY, taskName + '.json');
 
       const TASK_CONFIG = {
-        'general': {
-          'dateFormat': 'yyyy-MM-DD HH-mm-ss',
-          'outputFile': '{date} - {taskName}',
-          'gzip': true,
-          'gzipLevel': 6,
+        general: {
+          dateFormat: 'yyyy-MM-DD HH-mm-ss',
+          outputFile: '{date} - {taskName}',
+          gzip: true,
+          gzipLevel: 6,
         },
-        'vacuum': {
-          'enabled': true,
-          'unit': 'DAYS',
-          'time': 7,
+        vacuum: {
+          enabled: true,
+          unit: 'DAYS',
+          time: 7,
         },
-        'mysql': {
-          'enabled': true,
-          'host': 'localhost',
-          'port': 3306,
-          'user': '',
-          'password': '',
-          'database': '',
+        mysql: {
+          enabled: true,
+          host: 'localhost',
+          port: 3306,
+          user: '',
+          password: '',
+          database: '',
         },
-        'filesystem': {
-          'enabled': true,
-          'targets': [
-            '/home/magento/',
-            '/home/test/testfile.txt',
-          ],
+        filesystem: {
+          enabled: true,
+          targets: ['/home/magento/', '/home/test/testfile.txt'],
         },
       };
       try {
         const SAVE_FILE = fs.createWriteStream(TASK_FILE_PATH);
         SAVE_FILE.write(JSON.stringify(TASK_CONFIG, null, 4));
         SAVE_FILE.end();
-        logger.success('Task file "' + path.basename(TASK_FILE_PATH) + '" saved successfully');
+        logger.success(
+            'Task file "' + path.basename(TASK_FILE_PATH) + '" saved successfully',
+        );
       } catch (err) {
         logger.error(err);
       }
@@ -292,27 +354,39 @@ const validate = (taskConfig) => {
   const ERRORS = [];
 
   if (taskConfig.general && typeof taskConfig.general === 'object') {
-    if (taskConfig.general.dateFormat && typeof taskConfig.general.dateFormat === 'string') {
+    if (
+      taskConfig.general.dateFormat &&
+      typeof taskConfig.general.dateFormat === 'string'
+    ) {
       const DATE_FORMAT = taskConfig.general.dateFormat;
-      const DATE_FORMAT_REGEX = /d{1,4}|D{3,4}|m{1,4}|yy(?:yy)?|([HhMsTt])\1?|W{1,2}|[LlopSZN]|"[^"]*"|'[^']*'/g;
+      const DATE_FORMAT_REGEX =
+        /d{1,4}|D{3,4}|m{1,4}|yy(?:yy)?|([HhMsTt])\1?|W{1,2}|[LlopSZN]|"[^"]*"|'[^']*'/g;
       if (!DATE_FORMAT_REGEX.test(DATE_FORMAT)) {
         ERRORS.push('general.dateFormat is not a valid date format');
       }
     } else {
       ERRORS.push('general.dateFormat is not defined or is not a string');
     }
-    if (taskConfig.general.outputFile && typeof taskConfig.general.outputFile === 'string') {
+    if (
+      taskConfig.general.outputFile &&
+      typeof taskConfig.general.outputFile === 'string'
+    ) {
       const OUTPUT_FILE = taskConfig.general.outputFile;
       const OUTPUT_FILE_REGEX = /^([^.]+)$/g;
       if (!OUTPUT_FILE_REGEX.test(OUTPUT_FILE)) {
-        ERRORS.push('general.outputFile is not a valid output file name, maybe you added a file extension?');
+        ERRORS.push(
+            'general.outputFile is not a valid output file name, maybe you added a file extension?',
+        );
       }
     } else {
       ERRORS.push('general.outputFile is not defined or is not a string');
     }
     if (typeof taskConfig.general.gzip === 'boolean') {
       if (taskConfig.general.gzip) {
-        if (!taskConfig.general.gzipLevel && typeof taskConfig.general.gzipLevel !== 'number') {
+        if (
+          !taskConfig.general.gzipLevel &&
+          typeof taskConfig.general.gzipLevel !== 'number'
+        ) {
           ERRORS.push('general.gzipLevel is not defined or is not a number');
         }
       }
@@ -330,19 +404,29 @@ const validate = (taskConfig) => {
     if (typeof taskConfig.vacuum.enabled !== 'boolean') {
       ERRORS.push('vacuum.enabled is not defined or is not a boolean');
     } else if (taskConfig.vacuum.enabled) {
-      if (taskConfig.vacuum.unit && typeof taskConfig.vacuum.unit === 'string') {
+      if (
+        taskConfig.vacuum.unit &&
+        typeof taskConfig.vacuum.unit === 'string'
+      ) {
         const UNIT = taskConfig.vacuum.unit;
         const UNIT_REGEX = /^(DAYS|HOURS|MINUTES)$/g;
         if (!UNIT_REGEX.test(UNIT)) {
-          ERRORS.push('vacuum.unit is not a valid unit, please use DAYS, HOURS or MINUTES');
+          ERRORS.push(
+              'vacuum.unit is not a valid unit, please use DAYS, HOURS or MINUTES',
+          );
         }
       } else {
         ERRORS.push('vacuum.unit is not defined or is not a string');
       }
-      if (taskConfig.vacuum.time && typeof taskConfig.vacuum.time === 'number') {
+      if (
+        taskConfig.vacuum.time &&
+        typeof taskConfig.vacuum.time === 'number'
+      ) {
         const TIME = taskConfig.vacuum.time;
         if (TIME < 1) {
-          ERRORS.push('vacuum.time is not a valid time, please use a number greater than 0');
+          ERRORS.push(
+              'vacuum.time is not a valid time, please use a number greater than 0',
+          );
         }
       } else {
         ERRORS.push('vacuum.time is not defined or is not a number');
@@ -371,7 +455,10 @@ const validate = (taskConfig) => {
       if (typeof taskConfig.mysql.password !== 'string') {
         ERRORS.push('mysql.password is not defined or is not a string');
       }
-      if (!taskConfig.mysql.database || typeof taskConfig.mysql.database !== 'string') {
+      if (
+        !taskConfig.mysql.database ||
+        typeof taskConfig.mysql.database !== 'string'
+      ) {
         ERRORS.push('mysql.database is not defined or is not a string');
       }
     }
@@ -388,14 +475,19 @@ const validate = (taskConfig) => {
     if (typeof taskConfig.filesystem.enabled !== 'boolean') {
       ERRORS.push('filesystem.enabled is not defined or is not a boolean');
     } else if (taskConfig.filesystem.enabled) {
-      if (taskConfig.filesystem.targets && typeof taskConfig.filesystem.targets === 'object') {
+      if (
+        taskConfig.filesystem.targets &&
+        typeof taskConfig.filesystem.targets === 'object'
+      ) {
         const TARGETS = taskConfig.filesystem.targets;
         if (TARGETS.length < 1) {
           ERRORS.push('filesystem.targets is not defined or is not an array');
         } else {
           for (const target of TARGETS) {
             if (!target || typeof target !== 'string') {
-              ERRORS.push('filesystem.targets[] is not defined or is not a valid path');
+              ERRORS.push(
+                  'filesystem.targets[] is not defined or is not a valid path',
+              );
             }
           }
         }
@@ -434,7 +526,8 @@ const cli = async (forcePrompt) => {
     const PROMPT = await prompts({
       type: 'toggle',
       name: 'createTask',
-      message: 'This is the first time you run this script, do you want to create a new task?',
+      message:
+        'This is the first time you run this script, do you want to create a new task?',
       active: 'yes',
       inactive: 'no',
       initial: false,
@@ -474,4 +567,3 @@ const cli = async (forcePrompt) => {
 };
 
 cli(false);
-
