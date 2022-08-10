@@ -16,6 +16,9 @@ const BACKUPS_DIRECTORY = path.join(CURRENT_FOLDER, 'backups');
 const TEMP_DIR = path.join(CURRENT_FOLDER, '.temp');
 
 const run = async (programArgs) => {
+  if (programArgs === undefined || programArgs.action === undefined) {
+    return;
+  }
   const ACTION = programArgs.action.toLowerCase();
   switch (ACTION) {
     case 'exit':
